@@ -157,13 +157,19 @@ function bIcon(b){
  if(map.getZoom()<14) return L.divIcon({className:"lbl",html:`<div class="dot" style="--c:${c}"></div>`,iconSize:[0,0]});
  return L.divIcon({className:"lbl",html:`<div class="pill" style="--c:${c}"><span class="t">${GLYPH[b.asset]}</span>${short(b.dep_med)}<small>/</small>${b.rent_med}만</div>`,iconSize:[0,0]});
 }
+const isMobile=/Android|iPhone|iPad|Mobile/i.test(navigator.userAgent);
+function naverLand(b){
+ return isMobile
+  ? `https://m.land.naver.com/map/${b.lat}:${b.lng}:16:/OPST:OR:VL:DDDGG/B2`
+  : `https://new.land.naver.com/rooms?ms=${b.lat},${b.lng},16&a=OPST:OR:VL:DDDGG&b=B2&e=RETAIL`;
+}
 function naverUrl(b){return "https://map.naver.com/p/search/"+encodeURIComponent(b.district+" "+b.name);}
 function kakaoUrl(b){return "https://map.kakao.com/?q="+encodeURIComponent(b.district+" "+b.name);}
 function popup(b){
  const deals="<table>"+b.deals.map(d=>`<tr><td>${d.d}</td><td>${d.a}㎡</td><td>${d.f?d.f+"층":""}</td><td>${man(d.dep)} / ${d.r}만</td></tr>`).join("")+"</table>";
  return `<h4>${b.name}</h4><span class="m">${b.gu} ${b.district} · ${ASSET[b.asset]} · ${b.build?b.build+"년 준공":""} · 공장까지 직선 ${b.km}km</span>
  <div style="margin-top:4px">최근 3개월 월세 계약 <b>${b.n}건</b> · 중위 <b>${man(b.dep_med)} / ${b.rent_med}만</b> (${b.rent_min}~${b.rent_max}만) · 전용 ${b.area_med}㎡</div>${deals}
- <div style="margin-top:6px"><a href="${naverUrl(b)}" target="_blank" rel="noopener">네이버 지도</a> · <a href="${kakaoUrl(b)}" target="_blank" rel="noopener">카카오맵</a> · <a href="https://new.land.naver.com/search?ms=${b.lat},${b.lng},17&a=OPST:OR:VL:DDDGG&e=RETAIL" target="_blank" rel="noopener">네이버 부동산 이 위치 매물</a></div>`;
+ <div style="margin-top:6px"><a href="${naverUrl(b)}" target="_blank" rel="noopener">네이버 지도</a> · <a href="${kakaoUrl(b)}" target="_blank" rel="noopener">카카오맵</a> · <a href="${naverLand(b)}" target="_blank" rel="noopener">네이버 부동산 이 위치 월세 매물</a></div>`;
 }
 let cur=[];
 function drawBlds(){
