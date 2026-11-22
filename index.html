@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,maximum-scale=1">
 <title>광명 통근버스 · 월세 지도</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
@@ -31,7 +31,7 @@ input[type=search],select{font:inherit;padding:5px 8px;border:1px solid var(--li
 .legend{font-size:12px;color:var(--muted);display:flex;gap:10px;flex-wrap:wrap;margin-top:6px}
 .legend i{width:10px;height:10px;border-radius:50%;display:inline-block;margin-right:3px;vertical-align:middle}
 .leaflet-popup-content{font:13px/1.45 "Noto Sans KR",system-ui,sans-serif;margin:10px 12px}
-.leaflet-popup-content h4{margin:0 0 4px;font-size:14px}.leaflet-popup-content table{border-collapse:collapse;font-size:12px;margin-top:4px}
+.leaflet-popup-content h4{margin:0 0 4px;font-size:14px}.leaflet-popup-content table{border-collapse:collapse;font-size:12px;margin-top:4px;display:block;max-width:100%;overflow-x:auto}
 .leaflet-popup-content td{padding:1px 6px 1px 0;white-space:nowrap}.leaflet-popup-content .m{color:var(--muted);font-size:12px}
 .leaflet-popup-content a{color:var(--accent)}
 .bus{width:22px;height:22px;border-radius:6px;background:#fff;border:2.5px solid var(--c,#333);display:flex;align-items:center;justify-content:center;font-size:13px;line-height:1;box-shadow:0 1px 3px rgba(0,0,0,.35)}
@@ -41,9 +41,29 @@ input[type=search],select{font:inherit;padding:5px 8px;border:1px solid var(--li
 .pill small{font-weight:400;opacity:.9}
 .dot{width:12px;height:12px;border-radius:50%;background:var(--c);border:2px solid #fff;box-shadow:0 1px 3px rgba(0,0,0,.4);transform:translate(-50%,-50%)}
 .leaflet-marker-icon.lbl{background:none;border:0;width:auto!important;height:auto!important}
-@media (max-width:760px){body{flex-direction:column}#side{width:100%;height:46%;border-right:0;border-bottom:1px solid var(--line)}#map{height:54%}}
+#handle{display:none}
+@media (max-width:760px){
+ body{display:block;position:relative}
+ #map{position:absolute;inset:0;height:100%}
+ #side{position:fixed;left:0;right:0;bottom:0;height:auto;max-height:72vh;border-right:0;border-top:1px solid var(--line);border-radius:14px 14px 0 0;background:var(--bg);box-shadow:0 -4px 16px rgba(0,0,0,.18);z-index:1000;padding:0 14px 20px;transition:transform .25s ease;overflow:auto;-webkit-overflow-scrolling:touch}
+ #side.collapsed{transform:translateY(calc(100% - 58px));overflow:hidden}
+ #handle{display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:var(--bg);padding:10px 0 8px;border-bottom:1px solid var(--line);margin-bottom:6px;cursor:pointer;z-index:2}
+ #handle b{font-size:15px;font-weight:700}
+ #handle::before{content:"";position:absolute;left:50%;top:4px;width:40px;height:4px;margin-left:-20px;border-radius:2px;background:#c9c6bd}
+ #handle span{font-size:13px;color:var(--accent);font-weight:500;padding:4px 10px;border:1px solid var(--accent);border-radius:999px}
+ h1{display:none}.sub{font-size:11px}
+ h2{margin:10px 0 4px}
+ .ctl{grid-template-columns:1fr auto;margin:2px 0}
+ .ctl input[type=range]{height:28px}
+ .leaflet-control-zoom{display:none}
+ .leaflet-top.leaflet-right{top:8px}
+ #list li{padding:8px 10px}
+ .bus{width:20px;height:20px;font-size:12px}
+ .pill{font-size:12px;padding:3px 8px 3px 3px}
+}
 </style></head><body>
 <aside id="side">
+ <div id="handle"><b>필터 · 건물 목록</b><span id="handle-btn">열기</span></div>
  <h1>KIA 광명 통근버스 · 월세 지도</h1>
  <p class="sub">노선표 2026-09-21판 · 실거래 전월세 2026.08~10 (국토교통부) · 지도 © OpenStreetMap · OpenFreeMap</p>
  <h2>통근버스 노선</h2>
@@ -115,7 +135,7 @@ function drawRoutes(){
   const miss=r.missing.length?`<p class="m">위치 미확인 정류장: ${r.missing.join(", ")}</p>`:"";
   const tbl="<table>"+r.stops.map(s=>`<tr><td>${s.time}</td><td>${s.name}${s.lat?"":" <span class='m'>(미확인)</span>"}</td></tr>`).join("")+"</table>";
   const pop=`<h4>${r.sheet} ${r.kind} · ${r.route}</h4><span class="m">${r.region}권 · 정류장 ${r.stops.length}개. 선은 정류장 순서를 이은 것이며 실제 주행 경로가 아닙니다.</span>${tbl}${miss}`;
-  L.polyline(r.line,{color:col,weight:3,opacity:.75,dashArray:r.kind==="퇴근"?"6 6":null}).bindPopup(pop,{maxWidth:360}).addTo(routeLayer);
+  L.polyline(r.line,{color:col,weight:3,opacity:.75,dashArray:r.kind==="퇴근"?"6 6":null}).bindPopup(pop,{maxWidth:Math.min(360,innerWidth-50)}).addTo(routeLayer);
   for(const s of r.stops){ if(!s.lat) continue;
    L.marker([s.lat,s.lng],{icon:L.divIcon({className:"lbl",html:`<div class="bus" style="--c:${col}">🚌</div>`,iconSize:[22,22],iconAnchor:[11,11]})})
     .bindPopup(`<h4>${s.name}</h4>${r.sheet} ${r.kind} ${r.route} 노선 · <b>${s.time}</b><br><span class="m">카카오 매칭: ${s.place} (${s.addr||""})</span>`).addTo(routeLayer);
@@ -153,7 +173,7 @@ function drawBlds(){
  document.getElementById("o-rent").textContent=rent+"만";document.getElementById("o-dep").textContent=dep.toLocaleString()+"만";document.getElementById("o-area").textContent=area+"㎡";document.getElementById("o-by").textContent=by+"년";
  cur=BLDS.filter(b=>b.rent_med<=rent&&b.dep_med<=dep&&b.area_med>=area&&(b.build||0)>=by&&assets.includes(b.asset)&&(!q||(b.district+b.name+b.gu).includes(q)));
  for(const b of cur){
-  L.marker([b.lat,b.lng],{icon:bIcon(b),zIndexOffset:b.n}).bindPopup(popup(b),{maxWidth:380}).addTo(bLayer);
+  L.marker([b.lat,b.lng],{icon:bIcon(b),zIndexOffset:b.n}).bindPopup(popup(b),{maxWidth:Math.min(380,innerWidth-50)}).addTo(bLayer);
  }
  document.getElementById("bcnt").textContent=`조건에 맞는 건물 ${cur.length}개 (전체 ${BLDS.length}개). 목록은 공장에서 가까운 순 40개.`;
  const list=document.getElementById("list"); list.innerHTML="";
@@ -168,4 +188,13 @@ document.querySelectorAll("#f-rent,#f-dep,#f-area,#f-by,.f-asset").forEach(i=>i.
 document.getElementById("q").addEventListener("input",drawBlds);
 map.on("zoomend",()=>{const z=map.getZoom();if((z>=14)!==lastBig){lastBig=z>=14;drawBlds();}});let lastBig=map.getZoom()>=14;
 drawRoutes(); drawBlds();
+// 모바일 바텀시트
+const side=document.getElementById("side"),handle=document.getElementById("handle"),hb=document.getElementById("handle-btn");
+const mobile=()=>matchMedia("(max-width:760px)").matches;
+function setSheet(open){side.classList.toggle("collapsed",!open);hb.textContent=open?"접기":"열기";}
+if(mobile()){setSheet(false);}
+handle.addEventListener("click",()=>setSheet(side.classList.contains("collapsed")));
+map.on("click",()=>{if(mobile())setSheet(false);});
+document.getElementById("list").addEventListener("click",()=>{if(mobile())setSheet(false);});
+addEventListener("resize",()=>{if(!mobile())side.classList.remove("collapsed");});
 </script></body></html>
